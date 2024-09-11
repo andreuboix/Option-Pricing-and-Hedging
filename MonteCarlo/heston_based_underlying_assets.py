@@ -1,10 +1,16 @@
 import numpy as np
 from scipy.stats import expon, poisson, norm
 
-def Heston(N, Nsim, T, theta, k, epsilon, r, X0, rho, V0):
+def Heston(N: int, Nsim: int, T: float, theta: float, k: float, epsilon: float, r: float, X0: float, rho: float, V0: float) -> np.ndarray:
     """
     Parameters
     ----------
+    N : int
+        Number of time steps.
+    Nsim : int
+        Number of simulations.
+    T : float
+        Time horizon.
     theta : 
         long term mean reversion.
     k : 
