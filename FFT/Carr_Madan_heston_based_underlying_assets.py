@@ -2,21 +2,26 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.fft import fft
 
+S = 100
+T = 1
+r = 0.0367
+mu = 1
+v0, kappa, theta, sig, rho = [1e-02,  0.5e-02, 0.5e-01,  3.915e-02,  8e-02]
+tau = 0.5
+x = np.log(S)
 
-def CharExpBS(v,sig):    
-    V = -sig**2/2*v**2 # := V(v)
-    drift_rn = -(sig**2/2) # -V(-1j)
-    V = drift_rn*1j*v + V 
-    return V
+def CharFunHeston(v):
+    gamma = kappa-rho*sig*v*1j
+    zeta = -1/2*(v**2+1j*v)
+    psi = np.sqrt(gamma**2 - 2*(sig**2)*zeta)
+    C = (-2*kappa*theta/sig**2)*(2*np.log( (2*psi-(psi-gamma)*(1-np.exp(-psi*tau))) / (2*psi)) + (psi-gamma)*tau)
+    B = (2*zeta*(1-np.exp(-psi*tau))*v0)/(2*psi-(psi-gamma)*(1-np.exp(-psi*tau)))
+    phi = np.exp(B+C)
+    return phi
 
 
-
-def FFT_BS(Strike):
-    # European Call - BS model
-    S = 100
-    T = 1
-    r = 0.0367
-    sig = 0.17801
+def FFT_Heston(Strike):
+    # European Call - Heston model
     Npow = 20
     N = 2**Npow
     A = 1200
@@ -26,11 +31,10 @@ def FFT_BS(Strike):
     Lambda = 2*np.pi/(N*eta)
     k = -Lambda*N/2 + Lambda*np.arange(N)
     
-    
     # Fourier transform of z_k
-    print("riskneutral check", np.exp(T*CharExpBS(-1j,sig)))
+    print("riskneutral check", CharFunHeston(-1j))
 
-    Z_k = np.exp(1j*r*v*T)*(np.exp(T*CharExpBS(v-1j,sig))-1)/(1j*v*(1j*v+1))
+    Z_k = np.exp(1j*r*v*T)*(CharFunHeston(v-1j)-1)/(1j*v*(1j*v+1))
     
     # Option price
     # Trapezoidal rule
@@ -61,4 +65,4 @@ def FFT_BS(Strike):
     return P_i
 
 
-print(FFT_BS(100))
+print(FFT_Heston(100))
