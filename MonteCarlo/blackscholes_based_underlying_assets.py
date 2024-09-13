@@ -1,16 +1,32 @@
 import numpy as np
 from scipy.stats import expon, poisson, norm
 
+__all__ = [
+    "X_BS",
+    "MD_X_BS",
+    "BM_inc",
+    "MD_BM_inc",
+    "X_BS_Kou",
+    "MD_X_BS_Kou",
+    "X_BS_Merton",
+    "MD_X_BS_Merton"
+]
 
-def X_BS(N, Nsim, T, mu, sigma, S0):
+def X_BS(N: int, Nsim: int, T: float, mu: float, sigma: float, S0: float) -> np.ndarray:
     """
     Parameters
     ----------
-    mu : 
+    N : int
+        Number of time steps.
+    Nsim : int
+        Number of simulations.
+    T : float
+        Time horizon.
+    mu : float
         BS parameter, drift.
-    sigma : 
+    sigma : float
         BS parameter, volatility.
-    S0 : 
+    S0 : float
         initial Stock price.
     """
     XT = mu * T + sigma * np.sqrt(T) * np.random.randn(Nsim, 1)
@@ -21,18 +37,26 @@ def X_BS(N, Nsim, T, mu, sigma, S0):
     for i in range(1, N+1):
         X[i,:] = X[i-1,:] + mu*dt + sigma*np.sqrt(dt)*np.random.randn(Nsim)
     return S0*np.exp(X)
-def MD_X_BS(N, Nsim, T, mu, sigma, S0):
+
+
+def MD_X_BS(N: int, Nsim: int, T: float, mu: float, sigma: float, S0: float) -> np.ndarray:
     """
     Parameters
     ----------
-    mu : 
+    N : int
+        Number of time steps.
+    Nsim : int
+        Number of simulations.
+    T : float
+        Time horizon.
+    mu : float
         BS parameter, drift vector of length d.
-    sigma : 
-        BS parameter, volatility matrix of size d x d.
-    S0 : 
+    sigma : float
+        BS parameter, volatility matrix of length d.
+    S0 : float
         initial Stock price vector of length d.
     """
-    d = len(S0)  # number of dimensions
+    d = len(S0)
     XT = mu * T + np.dot(np.linalg.cholesky(sigma), np.random.normal(size=(d, Nsim))).T * np.sqrt(T)
     ST = S0 * np.exp(XT)
     dt = T / N
@@ -42,6 +66,7 @@ def MD_X_BS(N, Nsim, T, mu, sigma, S0):
     for i in range(1, N+1):
         dW = np.dot(np.linalg.cholesky(sigma), np.random.normal(size=(d, Nsim))) * np.sqrt(dt)
         X[i,:,:] = X[i-1,:,:] + (mu - 0.5 * np.diag(sigma)) * dt + dW.T
+    
     return np.exp(X)
 
 

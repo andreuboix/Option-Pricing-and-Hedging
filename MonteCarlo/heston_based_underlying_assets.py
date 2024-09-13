@@ -1,6 +1,11 @@
 import numpy as np
 from scipy.stats import expon, poisson, norm
 
+__all__ = [
+    "Heston",
+    "MD_Heston"
+]
+
 def Heston(N: int, Nsim: int, T: float, theta: float, k: float, epsilon: float, r: float, X0: float, rho: float, V0: float) -> np.ndarray:
     """
     Parameters
@@ -11,19 +16,19 @@ def Heston(N: int, Nsim: int, T: float, theta: float, k: float, epsilon: float, 
         Number of simulations.
     T : float
         Time horizon.
-    theta : 
+    theta : float
         long term mean reversion.
-    k : 
+    k : float
         constant that multiplies mean reversion.
-    epsilon : 
+    epsilon : float
         vol-of-vol: volatility of the volatility.
-    r : 
+    r : float
         interest rate.
-    X0 : 
+    X0 : float
         initial underlying asset price
-    rho : 
+    rho : float
         correlation between volatility and underlying asset brownian motions.
-    V0 : 
+    V0 : float
         initial volatility value.
 
     Returns
@@ -45,16 +50,18 @@ def Heston(N: int, Nsim: int, T: float, theta: float, k: float, epsilon: float, 
     V[:,0] = V0
     Feller_condition = (epsilon**2 - 2*k*theta)
     dt = T / N
-    if Feller_condition > 0: # QE Scheme
+    if Feller_condition > 0: 
+        # QE Scheme
         Psi_cutoff = 1.5
-        for i in range(N): # Discretise V (volatility) and calculate m, Psi, s2
+        for i in range(N-1): 
+            # Discretise V (volatility) and calculate m, Psi, s2
             m = theta + (V[:,i] - theta)*np.exp(-k*dt)
             m2 = m**2
             s2 = V[:,i]*epsilon**2*np.exp(-k*dt)*(1-np.exp(-k*dt))/k + theta*epsilon**2*(1-np.exp(-k*dt))**2/(2*k)
             Psi = (s2)/(m2)
-            index = np.where(Psi_cutoff < Psi)[0]
-            
+           
             # Exponential approx scheme if Psi > Psi_cutoff
+            index = np.where(Psi > Psi_cutoff)[0]
             p_exp = (Psi[index]-1)/(Psi[index]+1)
             beta_exp = (1-p_exp)/m[index]
             U = np.random.rand(np.size(index))
@@ -75,17 +82,21 @@ def Heston(N: int, Nsim: int, T: float, theta: float, k: float, epsilon: float, 
         k2 = gamma2*dt*(k*rho/epsilon-0.5)+rho/epsilon
         k3 = gamma1*dt*(1-rho**2)
         k4 = gamma2*dt*(1-rho**2)
-        for i in range(N):
+        for i in range(N-1):
             X[:,i+1] = np.exp(np.log(X[:,i]))+k0+k1*V[:,i]+k2*V[:,i+1]+np.sqrt(k3*V[:,i])+k4*V[:,i+1]*np.random.randn(1,Nsim)
+        
         return X
     else:
         mu = [0, 0]
         VC = [[1,rho],[rho,1]]
-        for i in range(N):
+        for i in range(N-1):
             Z = np.random.multivariate_normal(mu,VC,Nsim)
             X[:,i+1] = X[:,i] + (r-V[:,i]/2)*dt+np.sqrt(V[:,i]*dt)*Z[:,1]
             V[:,i+1] = V[:,i] + k*(theta-V[:,i])*dt+epsilon*np.sqrt(V[:,i]*dt)*Z[:,2]
+        
         return np.exp(X)
+
+
 def MD_Heston(N, Nsim, T, theta, k, epsilon, r, X0, rho, V0):
     """
     Parameters
@@ -130,16 +141,18 @@ def MD_Heston(N, Nsim, T, theta, k, epsilon, r, X0, rho, V0):
     Feller_condition = (epsilon**2 - 2*k*theta)
     dt = T / N
     
-    if Feller_condition > 0: # QE Scheme
+    if Feller_condition > 0: 
+        # QE Scheme
         Psi_cutoff = 1.5
-        for i in range(N): # Discretise V (volatility) and calculate m, Psi, s2 for each dimension
+        for i in range(N): 
+            # Discretise V (volatility) and calculate m, Psi, s2 for each dimension
             m = theta + (V[:,i,:] - theta)*np.exp(-k*dt)
             m2 = m**2
             s2 = V[:,i,:]*epsilon**2*np.exp(-k*dt)*(1-np.exp(-k*dt))/k + theta*epsilon**2*(1-np.exp(-k*dt))**2/(2*k)
             Psi = (s2)/(m2)
-            index = np.where(Psi_cutoff < Psi)
             
             # Exponential approx scheme if Psi > Psi_cutoff
+            index = np.where(Psi > Psi_cutoff)
             p_exp = (Psi[index]-1)/(Psi[index]+1)
             beta_exp = (1-p_exp)/m[index]
             U = np.random.rand(np.size(index))
@@ -162,6 +175,7 @@ def MD_Heston(N, Nsim, T, theta, k, epsilon, r, X0, rho, V0):
             k4 = gamma2*dt*(1-rho**2)
             for i in range(N):
                 X[:,i+1] = np.exp(np.log(X[:,i]))+k0+k1*V[:,i]+k2*V[:,i+1]+np.sqrt(k3*V[:,i])+k4*V[:,i+1]*np.random.randn(1,Nsim)
+            
             return X
     else:
             mu = [0, 0]
@@ -170,4 +184,5 @@ def MD_Heston(N, Nsim, T, theta, k, epsilon, r, X0, rho, V0):
                 Z = np.random.multivariate_normal(mu,VC,Nsim)
                 X[:,i+1] = X[:,i] + (r-V[:,i]/2)*dt+np.sqrt(V[:,i]*dt)*Z[:,1]
                 V[:,i+1] = V[:,i] + k*(theta-V[:,i])*dt+epsilon*np.sqrt(V[:,i]*dt)*Z[:,2]
+            
             return np.exp(X)
