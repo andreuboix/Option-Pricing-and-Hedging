@@ -2,6 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.fft import fft
 
+__all__ = [
+    "CharExpBS",
+    "FFT_BS"
+]
 
 def CharExpBS(v,sig):    
     V = -sig**2/2*v**2 # := V(v)
@@ -61,4 +65,5 @@ def FFT_BS(Strike):
     return P_i
 
 
-print(FFT_BS(100))
+if __name__ == "__main__":
+    print(FFT_BS(100))
